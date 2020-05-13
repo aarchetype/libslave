@@ -794,9 +794,9 @@ void Slave::do_checksum_handshake(MYSQL* mysql)
 
 namespace
 {
-std::string checkAlterOrCreateQuery(const std::string& str)
+std::pair<std::string, std::string> checkAlterOrCreateQuery(const std::string& str)
 {
-    static const std::regex query_regex(R"((?:\s*\/\*.*?\*\/)*\s*(?:alter\s+table|create\s+table(?:\s+if\s+not\s+exists)?)\s+(?:`?\w+`?\.)?`?(\w+)`?(?:[^\w\.`].*$|$))",
+    static const std::regex query_regex(R"((?:\s*\/\*.*?\*\/)*\s*(?:alter\s+table|create\s+table(?:\s+if\s+not\s+exists)?)\s+(?:`?(\w+)`?\.)?`?(\w+)`?(?:[^\w\.`].*$|$))",
                                         std::regex_constants::optimize | std::regex_constants::icase);
 
     std::string s;
@@ -804,8 +804,8 @@ std::string checkAlterOrCreateQuery(const std::string& str)
 
     std::smatch sm;
     if (std::regex_match(s, sm, query_regex))
-        return sm[1];
-    return "";
+        return std::make_pair(sm[1], sm[2]);
+    return {};
 }
 }// anonymouos-namespace
 
@@ -830,9 +830,9 @@ int Slave::process_event(const slave::Basic_event_info& bei, RelayLogInfo& m_rli
         LOG_TRACE(log, "Received QUERY_EVENT: " << qei.query);
 
         const auto tbl_name = checkAlterOrCreateQuery(qei.query);
-        if (!tbl_name.empty())
+        if (!tbl_name.second.empty())
         {
-            const auto key = std::make_pair(qei.db_name, tbl_name);
+            const auto key = std::make_pair(!tbl_name.first.empty() ? tbl_name.first : qei.db_name, tbl_name.second);
             if (m_table_order.count(key) == 1)
             {
                 LOG_DEBUG(log, "Rebuilding database structure.");
