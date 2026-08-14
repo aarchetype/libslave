@@ -59,13 +59,13 @@ ENDIF ()
 MESSAGE (STATUS "Build ${LINK_TYPE} slave library")
 
 FILE (GLOB HDR "*.h")
-INSTALL (FILES ${HDR} DESTINATION include)
+INSTALL (FILES ${HDR} DESTINATION include/libslave)
 AUX_SOURCE_DIRECTORY (${CMAKE_CURRENT_SOURCE_DIR} SRC)
 
 # Most probably static mysql is built without fPIC, so, we can't build dynamic library with it
 ADD_LIBRARY (slave ${LINK_TYPE} ${SRC})
 TARGET_LINK_LIBRARIES (slave ${MYSQL_LIBS} ${ZLIB_LIBRARIES} -lpthread)
-INSTALL (TARGETS slave DESTINATION lib64)
+INSTALL (TARGETS slave DESTINATION lib)
 
 IF (WITH_TESTING)
     IF (Boost_FOUND)
